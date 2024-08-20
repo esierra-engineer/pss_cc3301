@@ -27,10 +27,10 @@ int palindrome(uint32_t x) {
 
     // iterar 4 veces
     for (int index = 0; index < 4; index++) {
+        // desplazamiento de bits
         this_shift = bitsize * index;
         // encontrar el primer dígito
         uint32_t first = (x >> (28 - this_shift)) & comparison;
-
         // encontrar el último dígito
         uint32_t last = (x >> this_shift) & comparison;
 
