@@ -37,6 +37,11 @@ char *lowerCase_v2(char *str) {
 
     while (*str != '\0') {
         *aux = *str;
+        char c = *aux;
+        if('A' <= c && c <= 'Z') {
+            c += 'a' - 'A';
+            *aux = c;
+        }
         aux++;
         str++;
     }
@@ -46,7 +51,7 @@ char *lowerCase_v2(char *str) {
 
 void main(){
     char test_str[] = "Hello World";
-    char* output = lowerCase(test_str);
+    char* output = lowerCase_v2(test_str);
     //printf("%s\n", test_str);
     printf("%s\n", output);
 }
