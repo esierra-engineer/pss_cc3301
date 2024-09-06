@@ -30,6 +30,20 @@ char *lowerCase(char *str) {
     return res;
 }
 
+char *lowerCase_v2(char *str) {
+    int n = strlen(str);
+    char *res = malloc(n+1);
+    char *aux = res;
+
+    while (*str != '\0') {
+        *aux = *str;
+        aux++;
+        str++;
+    }
+    *aux = '\0';
+    return res;
+}
+
 void main(){
     char test_str[] = "Hello World";
     char* output = lowerCase(test_str);
