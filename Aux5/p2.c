@@ -66,9 +66,38 @@ char* find(Tree *root, char* value) {
 
   if (cmp == 0) return root->val;
 
-  else if (cmp < 0) {
+  if (cmp < 0) {
     return find(root->right, value);
   }
-else {
   return find(root->left, value);
+}
+
+// Libera la memoria del nodo.
+void destroyNode(Tree* node) {
+  if (node == NULL) return;
+  free(node->val);
+  free(node);
+}
+
+/**
+* Busca si el valor esta en el arbol, si lo encuentra lo borra y libera el espacio del nodo.
+* Tanto si tiene o no exito, debe devolver root
+ * @param root
+ * @param value
+ * @return
+ */
+Tree* delVal(Tree *root, char* value) {
+
+}
+
+/**
+* // Libera la memoria utilizada por el arbol, debe hacerlo recursivamente
+ * @param root
+ */
+void freeTree(Tree *root) {
+  if (root == NULL) return;
+  destroyNode(root->right);
+  destroyNode(root->left);
+  destroyNode(root);
+
 }
