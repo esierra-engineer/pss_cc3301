@@ -9,8 +9,11 @@ int palindrome(uint32_t x);
 
 Ejemplos de uso:
 int rc1= palindrome(0x3a0ff0a3); // rc1 es 1, es palíndrome
+
 int rc2= palindrome(0x3a0ff0a4); // rc2 es 0, no es palíndrome
+
 int rc3= palindrome(0x3a0fe0b3); // rc3 es 0
+
 int rc4= palindrome(0x11); // rc4 es 0, 0x11 ≡ 0x00000011
 
 ## Restricciones:
