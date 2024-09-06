@@ -59,4 +59,16 @@ char* maxValue(Tree *root) {
 char* minValue(Tree *root);
 
 // Busca un valor, si lo encuentra lo retorna,de lo contrario retorna NULL
-char* find(Tree *root, char* value);
+char* find(Tree *root, char* value) {
+  if (root == NULL) return NULL;
+
+  int cmp = strcmp(root->val, value);
+
+  if (cmp == 0) return root->val;
+
+  else if (cmp < 0) {
+    return find(root->right, value);
+  }
+else {
+  return find(root->left, value);
+}
