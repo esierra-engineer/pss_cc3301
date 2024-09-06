@@ -87,7 +87,16 @@ void destroyNode(Tree* node) {
  * @return
  */
 Tree* delVal(Tree *root, char* value) {
+  if (root == NULL) return NULL;
 
+  int cmp = strcmp(root->val, value);
+
+  if (cmp == 0) return root->val;
+
+  if (cmp < 0) {
+    return delVal(root->right, value);
+  }
+  return delVal(root->left, value);
 }
 
 /**
