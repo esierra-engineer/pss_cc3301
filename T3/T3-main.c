@@ -1,7 +1,6 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "desbalancear.h"
+#include "tools.c"
+
 
 void desbalancear(Nodo **pa, Nodo **pult) {
     // caso base, el nodo vacío
@@ -54,8 +53,7 @@ Nodo* copiarArbol(Nodo* a){
         return NULL;
     }
 
-    Nodo* nuevoNodo = (Nodo*)malloc(sizeof(Nodo));
-
+    Nodo* nuevoNodo = malloc(sizeof(Nodo));
     if (nuevoNodo == NULL) {
         return NULL;
     }
@@ -81,4 +79,70 @@ Nodo *desbalanceado(Nodo *a, Nodo **pult) {
     desbalancear(&a_copy, pult);
 
     return a_copy;
+}
+
+
+void main() {
+    // Ejemplo de uso
+    /*Nodo n5 = {11, 3, NULL, NULL};
+    Nodo n4 = {2, 4, NULL, NULL};
+    Nodo n3 = {5, 4, NULL, NULL};
+    Nodo n2 = {4, 4, &n4, &n3};
+    Nodo n1 = {10, 3, NULL, &n5};
+    Nodo raiz = {8, 5, &n2, &n1};
+
+    Nodo* ult = NULL;
+    Nodo* arbol = &raiz;
+
+    printf("Árbol de entrada:\n");
+    treeprint(arbol);
+
+    printf("\n");
+
+    printf("Arbol desbalanceado con desbalancear:\n");
+    desbalancear(&arbol, &ult);
+    treeprint(arbol);
+
+    printf("\n");
+
+    printf("Ultimo Nodo: %d\n\n\n\n\n\n", ult->id);*/
+
+    /*Nodo n52 = {11, 3, NULL, NULL};
+    Nodo n42 = {2, 4, NULL, NULL};
+    Nodo n32 = {5, 4, NULL, NULL};
+    Nodo n22 = {4, 4, &n42, &n32};
+    Nodo n12 = {10, 3, NULL, &n52};
+    Nodo raiz2 = {8, 5, &n22, &n12};
+
+    Nodo* ult2 = NULL;
+    Nodo* arbol2 = &raiz2;
+
+    printf("Árbol de entrada 2:\n");
+    treeprint(arbol2);
+
+    printf("Arbol desbalanceado 2:\n");
+    Nodo* arbol3 = desbalanceado(arbol2, &ult2);
+    treeprint(arbol3);
+
+    printf("Árbol de entrada 2 despues de aplicar desbalanceado:\n");
+    treeprint(arbol2);*/
+
+    // El arbol binario del enunciado
+
+    static Nodo nu= { 'u', 0, NULL, NULL };
+    static Nodo ns= { 's', 0, NULL, &nu };
+    static Nodo nw= { 'w', 0, NULL, NULL };
+    static Nodo nx= { 'x', 0, &nw, NULL };
+    static Nodo nv= { 'v', 0, &ns, &nx };
+
+    treeprint(&nv);
+
+    Nodo* ult = NULL;
+    Nodo* arbol = &nv;
+
+    desbalancear(&arbol, &ult);
+
+    treeprint(arbol);
+    printf("Ultimo Nodo: %d\n\n\n\n\n\n", ult->id);
+
 }
