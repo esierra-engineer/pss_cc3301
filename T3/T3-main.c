@@ -74,11 +74,28 @@ Nodo* copiarArbol(Nodo* a){
 }
 
 Nodo *desbalanceado(Nodo *a, Nodo **pult) {
-    Nodo* a_copy = copiarArbol(a);
+    if (a == NULL) {
+        printf("null\n");
+        return a;
+    }
 
-    desbalancear(&a_copy, pult);
+    Nodo* nuevoNodo = (Nodo*)malloc(sizeof(Nodo));
 
-    return a_copy;
+    if (nuevoNodo == NULL) {
+        printf("malloc tuvo un problema\n");
+        return NULL;
+    }
+
+    nuevoNodo->id = a->id;
+    nuevoNodo->hash = a->hash;
+    nuevoNodo->der = NULL;
+    nuevoNodo->izq = NULL;
+
+    nuevoNodo = a;
+
+    desbalancear(&nuevoNodo, pult);
+
+    return nuevoNodo;
 }
 
 
@@ -129,6 +146,7 @@ void main() {
 
     // El arbol binario del enunciado
 
+    /*
     static Nodo nu= { 'u', 0, NULL, NULL };
     static Nodo ns= { 's', 0, NULL, &nu };
     static Nodo nw= { 'w', 0, NULL, NULL };
@@ -143,6 +161,26 @@ void main() {
     desbalancear(&arbol, &ult);
 
     treeprint(arbol);
-    printf("Ultimo Nodo: %d\n\n\n\n\n\n", ult->id);
+    printf("Ultimo Nodo: %d\n\n\n\n\n\n", ult->id);*/
+    // static Nodo nu= { 'u', 0, NULL, NULL };
+    // static Nodo ns= { 's', 0, NULL, &nu };
+    // static Nodo nw= { 'w', 0, NULL, NULL };
+    // static Nodo nx= { 'x', 0, &nw, NULL };
+    // static Nodo nv;
 
+    Nodo* ult = NULL;
+    Nodo* arbol = NULL;
+
+    printf("Árbol de entrada 2 antes de aplicar desbalanceado:\n");
+    treeprint(arbol);
+    printf("%d\n", &arbol);
+
+    printf("Arbol desbalanceado 2:\n");
+    Nodo* arbol3 = desbalanceado(arbol, &ult);
+    treeprint(arbol3);
+    printf("%d\n", &arbol3);
+
+    printf("Árbol de entrada 2 despues de aplicar desbalanceado:\n");
+    treeprint(arbol);
+    printf("%d\n", &arbol);
 }
