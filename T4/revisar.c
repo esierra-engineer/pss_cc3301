@@ -23,7 +23,7 @@ typedef struct nodo {
 Nodo *leer_nodo(FILE *dicc, char *nom) {
     int pos= ftell(dicc);
     NodoArch nodoa;
-    int rc= fread(&nodoa, sizeof(NodoArch), 1, dicc);
+    int rc = fread(&nodoa, sizeof(NodoArch), 1, dicc);
     if (feof(dicc))
         return NULL;
 
