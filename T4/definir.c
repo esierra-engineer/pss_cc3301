@@ -21,10 +21,12 @@ typedef struct nodo {
 } Nodo;
 
 // Lee un nodo en el diccionario en dicc
-Nodo *leer_nodo(FILE *dicc, char *nom) {
-    int pos= ftell(dicc);
+Nodo *leer_nodo(FILE *dicc, char *nom, int desplazamiento) {
+    fseek(dicc, desplazamiento, SEEK_CUR);
+
     NodoArch nodoa;
-    int rc= fread(&nodoa, sizeof(NodoArch), 1, dicc);
+    fread(&nodoa, sizeof(NodoArch), 1, dicc);
+
     if (feof(dicc))
         return NULL;
 
@@ -34,7 +36,7 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     }
 
     Nodo *pnodo= malloc(sizeof(Nodo));
-    pnodo->pos= pos;
+    pnodo->pos= desplazamiento;
     pnodo->nodoa= nodoa;
 
     pnodo->llave= malloc(nodoa.tam_llave+1);
@@ -45,8 +47,14 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     fread(pnodo->valor, nodoa.tam_valor, 1, dicc);
 
     pnodo->valor[nodoa.tam_valor]= 0;
-    return pnodo;
 
+    pnodo->pder = malloc(sizeof(Nodo)+sizeof(NodoArch));
+    fread(pnodo->pder, 4, 1, dicc);
+
+    pnodo->pizq = malloc(sizeof(Nodo)+sizeof(NodoArch));
+    fread(pnodo->pizq, 4, 1, dicc);
+
+    return pnodo;
 }
 
 /* Revise como se implementa la funcion revisar.c
@@ -79,13 +87,21 @@ int main(int argc, char **argv) {
     char* new_key_def = argv[3];
 
     // testing zone
-    char nom[] = "casa";
-    Nodo* p = leer_nodo(f, nom);
+    char* nom = NULL;
+    Nodo* p = leer_nodo(f, nom, 382);
+
     if (p == NULL) {
         printf("p es null\n");
+        free(p);
         return -1;
     }
-    printf(p->valor);
+    printf("llave: %s -> valor: %s\n", p->llave, p->valor);
+
+    NodoArch nodoa = p->nodoa;
+
+    printf("izq: %d\nder: %d\n", nodoa.izq, nodoa.der);
+
+    free(p);
 
 
 
