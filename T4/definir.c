@@ -3,9 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "pss.h"
-#include "pss.c"
-
 #define TAM_MAX 255
 
 typedef struct {
