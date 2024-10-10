@@ -20,12 +20,16 @@ typedef struct nodo {
     NodoArch nodoa;
 } Nodo;
 
-// Lee un nodo en el diccionario en dicc
-Nodo *leer_nodo(FILE *dicc, char *nom, int desplazamiento) {
-    fseek(dicc, desplazamiento, SEEK_CUR);
 
+// Lee un nodo en el diccionario en dicc
+Nodo *leer_nodo(FILE *dicc, char *nom) {
+    int pos= ftell(dicc);
+    printf("leer_nodo: pos vale: %d\n", pos);
     NodoArch nodoa;
-    fread(&nodoa, sizeof(NodoArch), 1, dicc);
+    int rc = fread(&nodoa, sizeof(NodoArch), 1, dicc);
+    printf("leer_nodo: fread leyo %d bytes\n", rc);
+    printf("el nodoa tiene: \n izq: %d\n der: %d\n, tam_llave: %d\n, tam_valor: %d\n",
+        nodoa.izq, nodoa.der, nodoa.tam_llave, nodoa.tam_valor);
 
     if (feof(dicc))
         return NULL;
@@ -36,25 +40,140 @@ Nodo *leer_nodo(FILE *dicc, char *nom, int desplazamiento) {
     }
 
     Nodo *pnodo= malloc(sizeof(Nodo));
-    pnodo->pos= desplazamiento;
+    pnodo->pos= pos;
     pnodo->nodoa= nodoa;
+    if (nodoa.tam_llave>TAM_MAX || nodoa.tam_llave<0) {
+        fprintf(stderr, "El tamanno de la llave parece corrupto (%d)\n",
+                nodoa.tam_llave);
+        exit(1);
+    }
+    if (nodoa.tam_valor>TAM_MAX || nodoa.tam_valor<0) {
+        fprintf(stderr, "El tamanno del valor parece corrupto (%d)\n",
+                nodoa.tam_llave);
+        exit(1);
+    }
 
     pnodo->llave= malloc(nodoa.tam_llave+1);
-    fread(pnodo->llave, nodoa.tam_llave, 1, dicc);
+    rc= fread(pnodo->llave, nodoa.tam_llave, 1, dicc);
+    if (rc<=0) {
+        fprintf(stderr, "No se puede leer llave de nodo en posicion %d\n", pos);
+        exit(1);
+    }
     pnodo->llave[nodoa.tam_llave]= 0;
 
     pnodo->valor= malloc(nodoa.tam_valor+1);
-    fread(pnodo->valor, nodoa.tam_valor, 1, dicc);
-
+    rc= fread(pnodo->valor, nodoa.tam_valor, 1, dicc);
+    if (rc<=0) {
+        fprintf(stderr, "No se puede leer valor de nodo en posicion %d\n", pos);
+        exit(1);
+    }
     pnodo->valor[nodoa.tam_valor]= 0;
-
-    pnodo->pder = malloc(sizeof(Nodo)+sizeof(NodoArch));
-    fread(pnodo->pder, 4, 1, dicc);
-
-    pnodo->pizq = malloc(sizeof(Nodo)+sizeof(NodoArch));
-    fread(pnodo->pizq, 4, 1, dicc);
-
     return pnodo;
+}
+
+void freeABB(Nodo* p) {
+    free(p->llave);
+    free(p->valor);
+    free(p);
+}
+
+
+Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
+    Nodo* p = leer_nodo(dicc, new_llave);
+    // caso base
+    if (p == NULL) {
+        return NULL;
+    }
+    // consulto el valor
+    char* this_key = p->llave;
+    printf("buscar_previo: el valor de this_key: %s\n", this_key);
+
+    // consulto si es igual a la llave buscada
+    int string_comp = strcmp(new_llave, this_key);
+
+    if (string_comp == 0) {
+        printf("buscar_previo: caso igualdad de llaves\n");
+        return p;
+    }
+
+    if (string_comp > 0) {
+        printf("buscar_previo: entre al caso >0\n");
+        int desp_der = (p->nodoa).der;
+        printf("buscar_previo: desp_der vale = %d\n", desp_der);
+        if (desp_der == -1) {
+            return p;
+        }
+        fseek(dicc, desp_der, SEEK_SET);
+        freeABB(p);
+        p = buscar_previo(dicc, new_llave, new_valor);
+    }
+    else {
+        int desp_izq = (p->nodoa).izq;
+        if (desp_izq == -1) {
+            return p;
+        }
+        fseek(dicc, desp_izq, SEEK_SET);
+        freeABB(p);
+        p = buscar_previo(dicc, new_llave, new_valor);
+    }
+    return p;
+}
+
+Nodo* insertar_nodo(FILE* dicc, int lastpos, char* new_llave, char* new_valor) {
+    fseek(dicc, 0, SEEK_END);
+
+    NodoArch nodoa;
+    nodoa.izq = -1;
+    nodoa.der = -1;
+    nodoa.tam_llave = strlen(new_llave);
+    nodoa.tam_valor = strlen(new_valor);
+
+    fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
+
+    if (ferror(dicc)) {
+        return NULL;
+    }
+
+    Nodo *pnodo= malloc(sizeof(Nodo));
+    pnodo->pos= lastpos;
+    pnodo->nodoa= nodoa;
+    pnodo->llave= new_llave;
+    pnodo->valor= new_valor;
+
+    fwrite(new_llave, nodoa.tam_llave, 1, dicc);
+    fwrite(new_valor, nodoa.tam_valor, 1, dicc);
+    return pnodo;
+}
+
+Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
+    Nodo* p = buscar_previo(dicc, new_llave, new_valor);
+    int lastpos = ftell(dicc);
+    if (p == NULL) {
+        return NULL;
+    }
+
+    int string_comp = strcmp(new_llave, p->llave);
+    printf("buscar_insertar: new_llave = (%s), string_comp = %d\n",
+        new_llave, string_comp);
+
+    if (string_comp > 0) {
+        int npos = p->pos;
+
+        fseek(dicc, npos, SEEK_SET);
+        NodoArch nodoa = p->nodoa;
+        nodoa.der = lastpos;
+        fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
+        p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
+    }
+    else if (string_comp < 0) {
+        int npos = p->pos;
+        fseek(dicc, npos, SEEK_SET);
+        NodoArch nodoa = p->nodoa;
+        nodoa.izq = lastpos;
+        fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
+        p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
+    }
+    return p;
 }
 
 /* Revise como se implementa la funcion revisar.c
@@ -87,34 +206,25 @@ int main(int argc, char **argv) {
     char* new_key_def = argv[3];
 
     // testing zone
-    char* nom = NULL;
-    Nodo* p = leer_nodo(f, nom, 0);
-
+    Nodo* p = buscar_insertar(f, new_key, new_key_def);
     if (p == NULL) {
-        printf("p es null\n");
-        free(p);
+        printf("ERROR p es null\n");
         return -1;
     }
-    printf("llave: %s\n"
-           "valor: %s\n", p->llave, p->valor);
 
-    NodoArch nodoa = p->nodoa;
-
-    printf("izq: %d\nder: %d\n", nodoa.izq, nodoa.der);
-
+    printf("llave: %s -- valor: %s\n", p->llave, p->valor);
     free(p);
-
-
+    fclose(f);
 
 
     // mover el puntero al final
-    fseek(f, 0, SEEK_END);
+    //fseek(f, 0, SEEK_END);
 
     // posicion inicial del puntero
-    int i = 0;
+    //int i = 0;
 
-    int32_t buffer;
-    int64_t offset;
+    //int32_t buffer;
+    //int64_t offset;
 
     /*// comprobar si el archivo es o no vacio
     if (ftell(f) != 0) {
