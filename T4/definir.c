@@ -27,8 +27,9 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     NodoArch nodoa;
     int rc = fread(&nodoa, sizeof(NodoArch), 1, dicc);
 
-    if (feof(dicc))
+    if (feof(dicc)) {
         return NULL;
+    }
 
     if (ferror(dicc)) {
         perror(nom);
@@ -41,11 +42,13 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     if (nodoa.tam_llave>TAM_MAX || nodoa.tam_llave<0) {
         fprintf(stderr, "El tamanno de la llave parece corrupto (%d)\n",
                 nodoa.tam_llave);
+        free(pnodo);
         exit(1);
     }
     if (nodoa.tam_valor>TAM_MAX || nodoa.tam_valor<0) {
         fprintf(stderr, "El tamanno del valor parece corrupto (%d)\n",
                 nodoa.tam_llave);
+        free(pnodo);
         exit(1);
     }
 
@@ -53,6 +56,8 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     rc= fread(pnodo->llave, nodoa.tam_llave, 1, dicc);
     if (rc<=0) {
         fprintf(stderr, "No se puede leer llave de nodo en posicion %d\n", pos);
+        free(pnodo->llave);
+        free(pnodo);
         exit(1);
     }
     pnodo->llave[nodoa.tam_llave]= 0;
@@ -61,6 +66,9 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     rc= fread(pnodo->valor, nodoa.tam_valor, 1, dicc);
     if (rc<=0) {
         fprintf(stderr, "No se puede leer valor de nodo en posicion %d\n", pos);
+        free(pnodo->llave);
+        free(pnodo->valor);
+        free(pnodo);
         exit(1);
     }
     pnodo->valor[nodoa.tam_valor]= 0;
@@ -68,11 +76,12 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
 }
 
 void freeABB(Nodo* p) {
-    free(p->llave);
-    free(p->valor);
-    free(p);
+    if (p != NULL) {
+        free(p->llave);
+        free(p->valor);
+        free(p);
+    }
 }
-
 
 Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
     Nodo* p = leer_nodo(dicc, new_llave);
@@ -86,28 +95,22 @@ Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
     // consulto si es igual a la llave buscada
     int string_comp = strcmp(new_llave, this_key);
 
-    if (string_comp == 0) {
-        return p;
-    }
-
+    int desp;
     if (string_comp > 0) {
-        int desp_der = (p->nodoa).der;
-        if (desp_der == -1) {
+        desp = (p->nodoa).der;
+        if (desp == -1) {
             return p;
         }
-        fseek(dicc, desp_der, SEEK_SET);
-        freeABB(p);
-        p = buscar_previo(dicc, new_llave, new_valor);
     }
     else {
-        int desp_izq = (p->nodoa).izq;
-        if (desp_izq == -1) {
+        desp = (p->nodoa).izq;
+        if (desp == -1) {
             return p;
         }
-        fseek(dicc, desp_izq, SEEK_SET);
-        freeABB(p);
-        p = buscar_previo(dicc, new_llave, new_valor);
     }
+    fseek(dicc, desp, SEEK_SET);
+    freeABB(p);
+    p = buscar_previo(dicc, new_llave, new_valor);
     return p;
 }
 
@@ -141,7 +144,8 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     fseek(dicc, 0, SEEK_END);
     int lastpos = ftell(dicc);
     if (p == NULL) {
-        return NULL;
+        p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
+        return p;
     }
 
     int string_comp = strcmp(new_llave, p->llave);
@@ -163,6 +167,7 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     }
 
     fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
+    freeABB(p);
     p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
     return p;
 }
@@ -174,9 +179,8 @@ int main(int argc, char **argv) {
     /* Programe aqui su codigo */
 
     // comprobar la cantidad de parametros recibidos
-    if (argc != 4)
-    {
-        fwrite("uso: ./definir <archivo> <llave> <definicion>\n", 46, 1, stderr);
+    if (argc != 4){
+        fprintf(stderr, "uso: ./definir <archivo> <llave> <definicion>\n");
         exit(1);
     }
 
@@ -184,8 +188,7 @@ int main(int argc, char **argv) {
     FILE* f = fopen(argv[1], "rb+");
 
     // comprobar que el puntero no es nulo
-    if (f == NULL)
-    {
+    if (f == NULL){
         perror(argv[1]);
         exit(1);
     }
@@ -199,11 +202,12 @@ int main(int argc, char **argv) {
     // testing zone
     Nodo* p = buscar_insertar(f, new_key, new_key_def);
     if (p == NULL) {
-        printf("ERROR p es null\n");
+        fclose(f);
         return -1;
     }
 
-    //printf("llave: %s -- valor: %s\n", p->llave, p->valor);
     free(p);
     fclose(f);
+
+    return 0;
 }
