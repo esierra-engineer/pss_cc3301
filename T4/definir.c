@@ -28,7 +28,7 @@ Nodo *leer_nodo(FILE *dicc, char *nom) {
     NodoArch nodoa;
     int rc = fread(&nodoa, sizeof(NodoArch), 1, dicc);
     printf("leer_nodo: fread leyo %d bytes\n", rc);
-    printf("el nodoa tiene: \n izq: %d\n der: %d\n, tam_llave: %d\n, tam_valor: %d\n",
+    printf("leer_nodo: el nodoa tiene: \n izq: %d\n der: %d\n tam_llave: %d\n tam_valor: %d\n",
         nodoa.izq, nodoa.der, nodoa.tam_llave, nodoa.tam_valor);
 
     if (feof(dicc))
@@ -114,14 +114,15 @@ Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
         }
         fseek(dicc, desp_izq, SEEK_SET);
         freeABB(p);
+        printf("llamando a buscar_previo desde: %ld\n", ftell(dicc));
         p = buscar_previo(dicc, new_llave, new_valor);
     }
+    printf("buscar_previo retorna y deja el puntero en: %ld\n", ftell(dicc));
     return p;
 }
 
 Nodo* insertar_nodo(FILE* dicc, int lastpos, char* new_llave, char* new_valor) {
     fseek(dicc, 0, SEEK_END);
-
     NodoArch nodoa;
     nodoa.izq = -1;
     nodoa.der = -1;
@@ -147,7 +148,9 @@ Nodo* insertar_nodo(FILE* dicc, int lastpos, char* new_llave, char* new_valor) {
 
 Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     Nodo* p = buscar_previo(dicc, new_llave, new_valor);
+    fseek(dicc, 0, SEEK_END);
     int lastpos = ftell(dicc);
+    printf("buscar_insertar: lastpos vale %d\n", lastpos);
     if (p == NULL) {
         return NULL;
     }
@@ -156,23 +159,19 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     printf("buscar_insertar: new_llave = (%s), string_comp = %d\n",
         new_llave, string_comp);
 
-    if (string_comp > 0) {
-        int npos = p->pos;
+    NodoArch nodoa = p->nodoa;
+    int npos = p->pos;
+    fseek(dicc, npos, SEEK_SET);
 
-        fseek(dicc, npos, SEEK_SET);
-        NodoArch nodoa = p->nodoa;
+    if (string_comp > 0) {
         nodoa.der = lastpos;
-        fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
-        p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
     }
     else if (string_comp < 0) {
-        int npos = p->pos;
-        fseek(dicc, npos, SEEK_SET);
-        NodoArch nodoa = p->nodoa;
         nodoa.izq = lastpos;
-        fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
-        p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
     }
+
+    fwrite(&nodoa, sizeof(NodoArch), 1, dicc);
+    p = insertar_nodo(dicc, lastpos, new_llave, new_valor);
     return p;
 }
 
@@ -215,87 +214,4 @@ int main(int argc, char **argv) {
     printf("llave: %s -- valor: %s\n", p->llave, p->valor);
     free(p);
     fclose(f);
-
-
-    // mover el puntero al final
-    //fseek(f, 0, SEEK_END);
-
-    // posicion inicial del puntero
-    //int i = 0;
-
-    //int32_t buffer;
-    //int64_t offset;
-
-    /*// comprobar si el archivo es o no vacio
-    if (ftell(f) != 0) {
-        do {
-            offset = i;
-
-            // muevo el puntero
-            fseek(f, offset, SEEK_SET);
-
-            // leo 12 bytes y los guardo en buffer
-            fread(&buffer, 12, 1, f);
-
-            int16_t var_3c;
-            char* buf_1 = (&new_key_def - (((var_3c + 1) + 0xf) & 0xfffffffffffffff0));
-            fread(buf_1, var_3c, 1, f);
-            buf_1[var_3c] = 0;
-
-            if (strcmp(buf_1, new_key) == 0)
-            {
-                fprintf(stderr, "Llave existente: no se puede modificar la llave %s\n", new_key);
-                exit(1);
-            }*/
-
-            /*i = buffer;
-            var_4c_1 = 1;
-
-            if (rax_8 < 0)
-            {
-                int32_t i_1;
-                i = i_1;
-                var_4c_1 = 0;
-            }
-        } while (i != 0xffffffff);*/
-    //}
-
-
-    /**
-    * Contar que el numero de argumentos sea al menos 3+1: diccionario-salida llave definicion
-    * Guardar la llave nueva en variable char* new_key
-    * guardar la nueva definicion en variable char* new_def
-    * una variable sin inicializar para guardar el ultimo nodo visitado Nodo* pult
-    * abrir el archivo binario en *dicc
-        * arrojar error si no se puede abrir
-    * Nodo* raiz = leer_nodo(FILE *dicc, char *nom)
-    * funcion Nodo* buscar(Nodo* raiz, char* llave, Nodo* pult):
-        * if raiz == null:
-            * pult = null
-            * return
-        * leer raiz según estructura dada
-        * leer la llave del nodo raiz = char* raiz.llave
-        * pult = raiz
-        * if raiz.llave = new_key:
-            *  return raiz
-        * else:
-            *  comparar new_key con nodo.key
-            *  if new_key < nodo.key:
-                *  raiz = raiz.izq
-            *  else:
-                *  raiz = raiz.der
-            *  buscar(raiz, llave, pult)
-        * si llegamos hasta acá la llave no existe
-        * return null
-    * buscar en el diccionario con buscar(raiz, new_key, pult) -> ptr
-    * if ptr != null:
-        * existe la key, retornar error
-    * si no,
-    * crear nuevo nodo new_nodo con new_key y new_def
-    * comparar new_key con pult->key
-    * if new_key > pult->key:
-        * pult->der = new_nodo
-    * else:
-        * pult->izq = new_nodo
-    */
 }
