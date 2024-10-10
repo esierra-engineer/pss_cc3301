@@ -92,21 +92,24 @@ Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
     // consulto si es igual a la llave buscada
     int string_comp = strcmp(new_llave, this_key);
 
-    int desp;
-    if (string_comp > 0) {
-        desp = (p->nodoa).der;
-        if (desp == -1) {
-            return p;
-        }
+    // si es igual, retorno
+    if (string_comp == 0) {
+        return p;
     }
-    else {
-        desp = (p->nodoa).izq;
-        if (desp == -1) {
-            return p;
-        }
+
+    // no es igual, entonces evaluo el desplazamiento a la derecha o izquierda segun corresponda
+    int desp = (string_comp > 0) ? p->nodoa.der : p->nodoa.izq;;
+
+    // si no hay subarbol, retorno
+    if (desp == -1) {
+        return p;
     }
+
+    // desplazo el puntero de dicc hacia el desplazamiento encontrado
     fseek(dicc, desp, SEEK_SET);
+    // libero el puntero de la funcion
     freeABB(p);
+    // llamada recursiva
     p = buscar_previo(dicc, new_llave, new_valor);
     return p;
 }
@@ -128,8 +131,13 @@ Nodo* insertar_nodo(FILE* dicc, int lastpos, char* new_llave, char* new_valor) {
     Nodo *pnodo= malloc(sizeof(Nodo));
     pnodo->pos= lastpos;
     pnodo->nodoa= nodoa;
-    pnodo->llave= new_llave;
-    pnodo->valor= new_valor;
+
+    // alocar memoria y copiar llave
+    //pnodo->llave= new_llave;
+    pnodo->llave = malloc(nodoa.tam_llave);
+    memcpy(pnodo->llave, new_llave, nodoa.tam_llave);
+    pnodo->valor= malloc(nodoa.tam_valor);
+    memcpy(pnodo->valor, new_valor, nodoa.tam_valor);
 
     fwrite(new_llave, nodoa.tam_llave, 1, dicc);
     fwrite(new_valor, nodoa.tam_valor, 1, dicc);
@@ -149,6 +157,7 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
 
     if (string_comp == 0) {
         fprintf(stderr, "Llave existente: no se puede modificar la llave %s\n", new_llave);
+        freeABB(p);
         exit(1);
     }
 
@@ -203,7 +212,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    free(p);
+    freeABB(p);
     fclose(f);
 
     return 0;
