@@ -24,12 +24,8 @@ typedef struct nodo {
 // Lee un nodo en el diccionario en dicc
 Nodo *leer_nodo(FILE *dicc, char *nom) {
     int pos= ftell(dicc);
-    printf("leer_nodo: pos vale: %d\n", pos);
     NodoArch nodoa;
     int rc = fread(&nodoa, sizeof(NodoArch), 1, dicc);
-    printf("leer_nodo: fread leyo %d bytes\n", rc);
-    printf("leer_nodo: el nodoa tiene: \n izq: %d\n der: %d\n tam_llave: %d\n tam_valor: %d\n",
-        nodoa.izq, nodoa.der, nodoa.tam_llave, nodoa.tam_valor);
 
     if (feof(dicc))
         return NULL;
@@ -86,20 +82,16 @@ Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
     }
     // consulto el valor
     char* this_key = p->llave;
-    printf("buscar_previo: el valor de this_key: %s\n", this_key);
 
     // consulto si es igual a la llave buscada
     int string_comp = strcmp(new_llave, this_key);
 
     if (string_comp == 0) {
-        printf("buscar_previo: caso igualdad de llaves\n");
         return p;
     }
 
     if (string_comp > 0) {
-        printf("buscar_previo: entre al caso >0\n");
         int desp_der = (p->nodoa).der;
-        printf("buscar_previo: desp_der vale = %d\n", desp_der);
         if (desp_der == -1) {
             return p;
         }
@@ -114,10 +106,8 @@ Nodo* buscar_previo(FILE* dicc, char* new_llave, char* new_valor) {
         }
         fseek(dicc, desp_izq, SEEK_SET);
         freeABB(p);
-        printf("llamando a buscar_previo desde: %ld\n", ftell(dicc));
         p = buscar_previo(dicc, new_llave, new_valor);
     }
-    printf("buscar_previo retorna y deja el puntero en: %ld\n", ftell(dicc));
     return p;
 }
 
@@ -150,14 +140,16 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     Nodo* p = buscar_previo(dicc, new_llave, new_valor);
     fseek(dicc, 0, SEEK_END);
     int lastpos = ftell(dicc);
-    printf("buscar_insertar: lastpos vale %d\n", lastpos);
     if (p == NULL) {
         return NULL;
     }
 
     int string_comp = strcmp(new_llave, p->llave);
-    printf("buscar_insertar: new_llave = (%s), string_comp = %d\n",
-        new_llave, string_comp);
+
+    if (string_comp == 0) {
+        fprintf(stderr, "Llave existente: no se puede modificar la llave %s\n", new_llave);
+        exit(1);
+    }
 
     NodoArch nodoa = p->nodoa;
     int npos = p->pos;
@@ -166,7 +158,7 @@ Nodo* buscar_insertar(FILE* dicc, char* new_llave, char* new_valor) {
     if (string_comp > 0) {
         nodoa.der = lastpos;
     }
-    else if (string_comp < 0) {
+    else {
         nodoa.izq = lastpos;
     }
 
@@ -191,7 +183,7 @@ int main(int argc, char **argv) {
     // puntero al archivo
     FILE* f = fopen(argv[1], "rb+");
 
-    // comprobar que el punter no es nulo
+    // comprobar que el puntero no es nulo
     if (f == NULL)
     {
         perror(argv[1]);
@@ -211,7 +203,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    printf("llave: %s -- valor: %s\n", p->llave, p->valor);
+    //printf("llave: %s -- valor: %s\n", p->llave, p->valor);
     free(p);
     fclose(f);
 }
