@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     // comprobar la cantidad de parametros recibidos
     if (argc != 4)
     {
-        fwrite("uso: ./definir <archivo> <llave> <definicion>\n", 1, 46, stderr);
+        fwrite("uso: ./definir <archivo> <llave> <definicion>\n", 46, 1, stderr);
         exit(1);
     }
 
@@ -88,14 +88,15 @@ int main(int argc, char **argv) {
 
     // testing zone
     char* nom = NULL;
-    Nodo* p = leer_nodo(f, nom, 382);
+    Nodo* p = leer_nodo(f, nom, 0);
 
     if (p == NULL) {
         printf("p es null\n");
         free(p);
         return -1;
     }
-    printf("llave: %s -> valor: %s\n", p->llave, p->valor);
+    printf("llave: %s\n"
+           "valor: %s\n", p->llave, p->valor);
 
     NodoArch nodoa = p->nodoa;
 
